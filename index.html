@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>心沙园 Pro | 沉浸式对话疗愈</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            --panel-bg: rgba(255, 255, 255, 0.85);
+            --primary-green: #66bb6a;
+            --text-main: #2d4c3e;
+            --sand-color: #f3e5ab;
+            --wood-frame: #8d6e63;
+        }
+
+        body, html {
+            margin: 0; padding: 0;
+            font-family: 'STHeiti', 'Microsoft YaHei', sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex; justify-content: center; align-items: center;
+            overflow: hidden;
+        }
+
+        /* 背景氛围：呼吸感 */
+        .ambient-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1; opacity: 0.3;
+            background: radial-gradient(circle, #fff 0%, transparent 70%);
+            animation: breathe 8s infinite alternate;
+        }
+
+        @keyframes breathe {
+            from { transform: scale(1); opacity: 0.2; }
+            to { transform: scale(1.1); opacity: 0.4; }
+        }
+
+        .container {
+            width: 95%; max-width: 900px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(15px);
+            padding: 30px; border-radius: 40px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .step { display: none; animation: slideUp 1s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        .step.active { display: block; }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 沙盘区域 */
+        .sand-container {
+            position: relative;
+            margin: 15px auto;
+            width: 100%;
+            max-width: 700px;
+        }
+
+        .sand-box {
+            width: 100%; height: 350px;
+            background: var(--sand-color);
+            border: 18px solid var(--wood-frame);
+            border-radius: 12px;
+            position: relative;
+            box-shadow: inset 0 10px 30px rgba(0,0,0,0.2), 0 10px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        /* 增强型沙具：立体感 */
+        .sand-item {
+            position: absolute;
+            font-size: 45px;
+            cursor: move;
+            user-select: none;
+            filter: drop-shadow(5px 10px 5px rgba(0,0,0,0.3)); /* 创造立体阴影 */
+            transition: transform 0.2s;
+            z-index: 10;
+        }
+        .sand-item:hover { transform: scale(1.2) rotate(5deg); }
+
+        /* 分类标签样式 */
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .tab-btn {
+            background: rgba(255,255,255,0.6);
+            border: 1px solid #c8e6c9;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            color: #388e3c;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+        
+        .tab-btn.active {
+            background: var(--primary-green);
+            color: white;
+            border-color: var(--primary-green);
+            box-shadow: 0 4px 10px rgba(102,187,106,0.3);
+        }
+
+        /* 沙具选择区 */
+        .item-picker-container {
+            background: rgba(255,255,255,0.5); 
+            border-radius: 20px;
+            padding: 10px;
+            margin-top: 5px;
+            height: 80px; /* 固定高度防止抖动 */
+            overflow-y: auto;
+        }
+
+        .item-picker {
+            display: none; 
+            justify-content: center; gap: 15px;
+            flex-wrap: wrap; 
+        }
+        
+        .item-picker.active {
+            display: flex;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .picker-btn {
+            font-size: 28px; cursor: pointer; transition: 0.3s;
+            filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.1));
+            padding: 5px;
+            border-radius: 8px;
+        }
+        .picker-btn:hover { transform: translateY(-5px) scale(1.1); background: rgba(255,255,255,0.8); }
+
+        /* 按钮与输入 */
+        .btn {
+            background: var(--primary-green); color: white; border: none;
+            padding: 12px 35px; border-radius: 30px; font-size: 1rem;
+            cursor: pointer; transition: 0.3s; box-shadow: 0 4px 15px rgba(102,187,106,0.4);
+            margin-top: 15px;
+        }
+        .btn:hover { background: #4caf50; transform: translateY(-2px); }
+
+        select, textarea {
+            width: 100%; padding: 12px; border-radius: 15px;
+            border: 1px solid #c8e6c9; background: #f9fff9; margin-bottom: 15px;
+            font-family: inherit; font-size: 0.95rem;
+        }
+
+        /* 分析报告滚动条与对话样式 */
+        .report-content {
+            text-align: left; line-height: 1.8; max-height: 50vh;
+            overflow-y: auto; padding-right: 10px;
+        }
+        
+        .report-content::-webkit-scrollbar { width: 6px; }
+        .report-content::-webkit-scrollbar-thumb { background: #a5d6a7; border-radius: 3px; }
+
+        .chat-bubble { 
+            margin-bottom: 20px; padding: 20px; 
+            background: #fff; border-radius: 20px 20px 20px 5px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            position: relative;
+        }
+        
+        .chat-bubble::before {
+            content: '🌿'; position: absolute; top: -15px; left: -10px; font-size: 24px;
+        }
+
+        .highlight-text { color: #2e7d32; font-weight: bold; }
+        .soft-text { color: #558b2f; font-style: italic; }
+
+    </style>
+</head>
+<body>
+
+<div class="ambient-bg"></div>
+
+<!-- 替换为非常舒缓的轻音乐/白噪音混合（来自免费开源音源，适合冥想） -->
+<audio id="bgMusic" loop>
+    <source src="https://cdn.pixabay.com/download/audio/2022/01/21/audio_196321287e.mp3?filename=meditation-bowl-healing-sounds-114493.mp3" type="audio/mpeg">
+</audio>
+
+<div class="container">
+    <!-- 第一步：深度预设 -->
+    <div class="step active" id="step1">
+        <h2 style="color: #2e7d32;">🌿 聆听内心的声音</h2>
+        <p>在开始摆放前，请深呼吸三次。我们将开启一段属于你的安全对话。</p>
+        <div style="text-align: left; margin-top: 20px;">
+            <label style="color: #388e3c; font-weight: bold;">1. 此刻，你觉得内心最需要被关照的部分是？</label>
+            <select id="focusField">
+                <option value="ego">自我认同（我是谁，我的价值在哪）</option>
+                <option value="shadow">隐藏的疲惫与压力（那些我不愿面对的）</option>
+                <option value="persona">外界眼中的面具（我在社会/关系中扮演的角色）</option>
+                <option value="anima">内在的情感归宿（我渴望的温暖与爱）</option>
+            </select>
+            <label style="color: #388e3c; font-weight: bold; margin-top: 10px; display: block;">2. 用一两句话，告诉我你最近的一点小困惑或小期待：</label>
+            <textarea id="confusion" rows="3" placeholder="例如：最近总是觉得很累，不知道怎么平衡工作和生活..."></textarea>
+        </div>
+        <button class="btn" onclick="startExperience()">轻轻推开这扇门（开启冥想音）</button>
+    </div>
+
+    <!-- 第二步：立体沙盘 -->
+    <div class="step" id="step2">
+        <h2 style="color: #2e7d32;">🏜️ 你的心像沙盘</h2>
+        <p style="font-size: 0.95rem; color: #558b2f;">不要思考太多，让直觉引导你的手。点击类别切换沙具，拖入沙盘中。</p>
+        <p style="font-size: 0.85rem; color: #81c784;">💡 提示：拖动沙具可移动位置，右键点击可删除，鼠标滚轮可缩放大小</p>
+        
+        <button class="btn" onclick="analyzeSandplay()">摆放好了，我准备好倾听了</button>
+        
+        <div class="sand-container">
+            <div class="sand-box" id="sandBox"></div>
+        </div>
+        
+        <!-- 分类标签 -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('people')">人物类</button>
+            <button class="tab-btn" onclick="switchTab('animals')">动物类</button>
+            <button class="tab-btn" onclick="switchTab('architecture')">建筑类</button>
+            <button class="tab-btn" onclick="switchTab('transport')">交通工具类</button>
+            <button class="tab-btn" onclick="switchTab('furniture')">家具和日用品类</button>
+            <button class="tab-btn" onclick="switchTab('plants')">植物与自然景物类</button>
+            <button class="tab-btn" onclick="switchTab('food')">食物果实类</button>
+        </div>
+
+        <!-- 沙具选择区 -->
+        <div class="item-picker-container">
+            <!-- 人物类：代表自我、关系、情感 -->
+            <div class="item-picker active" id="tab-people">
+                <span class="picker-btn" title="自己" onclick="addItem('👤')">👤</span>
+                <span class="picker-btn" title="小孩" onclick="addItem('👶')">👶</span>
+                <span class="picker-btn" title="伴侣/朋友" onclick="addItem('👫')">👫</span>
+                <span class="picker-btn" title="家庭" onclick="addItem('👨‍👩‍👧')">👨‍👩‍👧</span>
+                <span class="picker-btn" title="老人/智慧" onclick="addItem('👴')">👴</span>
+                <span class="picker-btn" title="女性/阴柔" onclick="addItem('👩')">👩</span>
+                <span class="picker-btn" title="男性/阳刚" onclick="addItem('👨')">👨</span>
+                <span class="picker-btn" title="婴儿/新生" onclick="addItem('👼')">👼</span>
+                <span class="picker-btn" title="医生/治愈" onclick="addItem('👨‍⚕️')">👨‍⚕️</span>
+                <span class="picker-btn" title="老师/指导" onclick="addItem('👩‍🏫')">👩‍🏫</span>
+                <span class="picker-btn" title="警察/保护" onclick="addItem('👮')">👮</span>
+                <span class="picker-btn" title="消防员/勇敢" onclick="addItem('👨‍🚒')">👨‍🚒</span>
+                <span class="picker-btn" title="厨师/创造" onclick="addItem('👨‍🍳')">👨‍🍳</span>
+                <span class="picker-btn" title="艺术家/表达" onclick="addItem('👨‍🎨')">👨‍🎨</span>
+                <span class="picker-btn" title="运动员/活力" onclick="addItem('🏃')">🏃</span>
+                <span class="picker-btn" title="舞者/优雅" onclick="addItem('💃')">💃</span>
+                <span class="picker-btn" title="歌手/表达" onclick="addItem('🎤')">🎤</span>
+                <span class="picker-btn" title="音乐家/和谐" onclick="addItem('🎹')">🎹</span>
+                <span class="picker-btn" title="作家/思考" onclick="addItem('✍️')">✍️</span>
+                <span class="picker-btn" title="科学家/探索" onclick="addItem('🔬')">🔬</span>
+                <span class="picker-btn" title="宇航员/梦想" onclick="addItem('👨‍🚀')">👨‍🚀</span>
+                <span class="picker-btn" title="战士/勇气" onclick="addItem("🦸‍♂️")">🦸‍♂️</span>
+                <span class="picker-btn" title="精灵/魔法" onclick="addItem('🧚')">🧚</span>
+                <span class="picker-btn" title="巫师/智慧" onclick="addItem('🧙‍♂️')">🧙‍♂️</span>
+            </div>
+            
+            <!-- 动物类：代表本能、情感、生命力 -->
+            <div class="item-picker" id="tab-animals">
+                <span class="picker-btn" title="温顺的猫/独立" onclick="addItem('🐈')">🐈</span>
+                <span class="picker-btn" title="忠诚的狗/陪伴" onclick="addItem('🐕')">🐕</span>
+                <span class="picker-btn" title="自由的鸟" onclick="addItem('🕊️')">🕊️</span>
+                <span class="picker-btn" title="老虎/力量/愤怒" onclick="addItem('🐅')">🐅</span>
+                <span class="picker-btn" title="蝴蝶/蜕变" onclick="addItem('🦋')">🦋</span>
+                <span class="picker-btn" title="蛇/恐惧/治愈" onclick="addItem('🐍')">🐍</span>
+                <span class="picker-btn" title="鱼/潜意识" onclick="addItem('🐠')">🐠</span>
+                <span class="picker-btn" title="兔子/可爱/敏捷" onclick="addItem('🐰')">🐰</span>
+                <span class="picker-btn" title="熊/力量/保护" onclick="addItem('🐻')">🐻</span>
+                <span class="picker-btn" title="狮子/王者/勇气" onclick="addItem('🦁')">🦁</span>
+                <span class="picker-btn" title="大象/智慧/记忆" onclick="addItem('🐘')">🐘</span>
+                <span class="picker-btn" title="马/自由/力量" onclick="addItem('🐴')">🐴</span>
+                <span class="picker-btn" title="羊/温顺/群体" onclick="addItem('🐑')">🐑</span>
+                <span class="picker-btn" title="猪/富足/简单" onclick="addItem('🐷')">🐷</span>
+                <span class="picker-btn" title="鸡/勤劳/家庭" onclick="addItem('🐔')">🐔</span>
+                <span class="picker-btn" title="鸭/自由/适应" onclick="addItem('🦆')">🦆</span>
+                <span class="picker-btn" title="青蛙/转变/新生" onclick="addItem('🐸')">🐸</span>
+                <span class="picker-btn" title="乌龟/长寿/坚持" onclick="addItem('🐢')">🐢</span>
+                <span class="picker-btn" title="鲸鱼/深度/情感" onclick="addItem('🐋')">🐋</span>
+                <span class="picker-btn" title="海豚/智慧/友善" onclick="addItem('🐬')">🐬</span>
+                <span class="picker-btn" title="章鱼/灵活/复杂" onclick="addItem('🐙')">🐙</span>
+                <span class="picker-btn" title="螃蟹/防御/保护" onclick="addItem('🦀')">🦀</span>
+                <span class="picker-btn" title="蚂蚁/勤劳/团队" onclick="addItem('🐜')">🐜</span>
+                <span class="picker-btn" title="蜜蜂/勤劳/甜蜜" onclick="addItem('🐝')">🐝</span>
+                <span class="picker-btn" title="蜘蛛/创造/陷阱" onclick="addItem('🕷️')">🕷️</span>
+            </div>
+
+            <!-- 建筑类：代表边界、保护、结构 -->
+            <div class="item-picker" id="tab-architecture">
+                <span class="picker-btn" title="家/归宿" onclick="addItem('🏡')">🏡</span>
+                <span class="picker-btn" title="城堡/防御机制" onclick="addItem('🏰')">🏰</span>
+                <span class="picker-btn" title="桥梁/沟通/过渡" onclick="addItem('🌉')">🌉</span>
+                <span class="picker-btn" title="墙壁/阻碍" onclick="addItem('🧱')">🧱</span>
+                <span class="picker-btn" title="门/机会/选择" onclick="addItem('🚪')">🚪</span>
+                <span class="picker-btn" title="钥匙/解开" onclick="addItem('🔑')">🔑</span>
+                <span class="picker-btn" title="宝箱/隐藏的价值" onclick="addItem('🧰')">🧰</span>
+                <span class="picker-btn" title="高楼/成就/野心" onclick="addItem('🏢')">🏢</span>
+                <span class="picker-btn" title="学校/学习/成长" onclick="addItem('🏫')">🏫</span>
+                <span class="picker-btn" title="医院/治愈/关怀" onclick="addItem('🏥')">🏥</span>
+                <span class="picker-btn" title="教堂/信仰/宁静" onclick="addItem('⛪')">⛪</span>
+                <span class="picker-btn" title="寺庙/智慧/平和" onclick="addItem('🛕')">🛕</span>
+                <span class="picker-btn" title="灯塔/指引/希望" onclick="addItem('🗼')">🗼</span>
+                <span class="picker-btn" title="塔楼/观察/高度" onclick="addItem('🗼')">🗼</span>
+                <span class="picker-btn" title="帐篷/旅行/自由" onclick="addItem('⛺')">⛺</span>
+                <span class="picker-btn" title="工厂/生产/创造" onclick="addItem('🏭')">🏭</span>
+                <span class="picker-btn" title="银行/财富/安全" onclick="addItem('🏦')">🏦</span>
+                <span class="picker-btn" title="邮局/沟通/连接" onclick="addItem('🏣')">🏣</span>
+                <span class="picker-btn" title="图书馆/知识/智慧" onclick="addItem('🏛️')">🏛️</span>
+                <span class="picker-btn" title="监狱/限制/反思" onclick="addItem('🏛️')">🏛️</span>
+                <span class="picker-btn" title="游乐场/快乐/童真" onclick="addItem('🎡')">🎡</span>
+                <span class="picker-btn" title="摩天轮/循环/变化" onclick="addItem('🎠')">🎠</span>
+                <span class="picker-btn" title="喷泉/流动/情感" onclick="addItem('⛲')">⛲</span>
+                <span class="picker-btn" title="纪念碑/记忆/永恒" onclick="addItem('🗿')">🗿</span>
+            </div>
+
+            <!-- 交通工具类：代表移动、进步、旅程 -->
+            <div class="item-picker" id="tab-transport">
+                <span class="picker-btn" title="汽车/个人/自由" onclick="addItem('🚗')">🚗</span>
+                <span class="picker-btn" title="公交车/公共/共享" onclick="addItem('🚌')">🚌</span>
+                <span class="picker-btn" title="火车/长途/进步" onclick="addItem('🚂')">🚂</span>
+                <span class="picker-btn" title="地铁/地下/深层" onclick="addItem('🚇')">🚇</span>
+                <span class="picker-btn" title="飞机/梦想/高度" onclick="addItem('✈️')">✈️</span>
+                <span class="picker-btn" title="轮船/情感/深度" onclick="addItem('🚢')">🚢</span>
+                <span class="picker-btn" title="自行车/简单/健康" onclick="addItem('🚲')">🚲</span>
+                <span class="picker-btn" title="摩托车/速度/冒险" onclick="addItem('🏍️')">🏍️</span>
+                <span class="picker-btn" title="卡车/力量/承载" onclick="addItem('🚛')">🚛</span>
+                <span class="picker-btn" title="救护车/紧急/救助" onclick="addItem('🚑')">🚑</span>
+                <span class="picker-btn" title="消防车/危险/保护" onclick="addItem('🚒')">🚒</span>
+                <span class="picker-btn" title="警车/秩序/安全" onclick="addItem('🚓')">🚓</span>
+                <span class="picker-btn" title="出租车/服务/便利" onclick="addItem('🚕')">🚕</span>
+                <span class="picker-btn" title="校车/成长/学习" onclick="addItem('🚌')">🚌</span>
+                <span class="picker-btn" title="火箭/突破/创新" onclick="addItem('🚀')">🚀</span>
+                <span class="picker-btn" title="直升机/灵活/观察" onclick="addItem('🚁')">🚁</span>
+                <span class="picker-btn" title="帆船/自然/冒险" onclick="addItem('⛵')">⛵</span>
+                <span class="picker-btn" title="独木舟/孤独/探索" onclick="addItem('🛶')">🛶</span>
+                <span class="picker-btn" title="滑翔机/自由/视野" onclick="addItem('🪂')">🪂</span>
+                <span class="picker-btn" title="热气球/梦想/升腾" onclick="addItem('🎈')">🎈</span>
+                <span class="picker-btn" title="滑板/青春/活力" onclick="addItem('🛹')">🛹</span>
+                <span class="picker-btn" title="轮滑/平衡/技巧" onclick="addItem('🛼')">🛼</span>
+                <span class="picker-btn" title="雪橇/冒险/挑战" onclick="addItem('🛷')">🛷</span>
+                <span class="picker-btn" title="马车/传统/优雅" onclick="addItem('🐎')">🐎</span>
+            </div>
+
+            <!-- 家具和日用品类：代表生活、舒适、实用 -->
+            <div class="item-picker" id="tab-furniture">
+                <span class="picker-btn" title="床/休息/梦境" onclick="addItem('🛏️')">🛏️</span>
+                <span class="picker-btn" title="沙发/舒适/放松" onclick="addItem('🛋️')">🛋️</span>
+                <span class="picker-btn" title="椅子/支持/稳定" onclick="addItem('🪑')">🪑</span>
+                <span class="picker-btn" title="桌子/工作/聚会" onclick="addItem('🪵')">🪵</span>
+                <span class="picker-btn" title="台灯/指引/温暖" onclick="addItem('💡')">💡</span>
+                <span class="picker-btn" title="蜡烛/希望/温暖" onclick="addItem('🕯️')">🕯️</span>
+                <span class="picker-btn" title="镜子/自我/反思" onclick="addItem('🪞')">🪞</span>
+                <span class="picker-btn" title="时钟/时间/焦虑" onclick="addItem('🕰️')">🕰️</span>
+                <span class="picker-btn" title="闹钟/提醒/责任" onclick="addItem('⏰')">⏰</span>
+                <span class="picker-btn" title="电话/沟通/连接" onclick="addItem('☎️')">☎️</span>
+                <span class="picker-btn" title="手机/现代/便利" onclick="addItem('📱')">📱</span>
+                <span class="picker-btn" title="电脑/工作/信息" onclick="addItem('💻')">💻</span>
+                <span class="picker-btn" title="电视/娱乐/观察" onclick="addItem('📺')">📺</span>
+                <span class="picker-btn" title="书/知识/智慧" onclick="addItem('📚')">📚</span>
+                <span class="picker-btn" title="笔/表达/创造" onclick="addItem('✏️')">✏️</span>
+                <span class="picker-btn" title="剪刀/决定/分离" onclick="addItem('✂️')">✂️</span>
+                <span class="picker-btn" title="钥匙/开启/机会" onclick="addItem('🔑')">🔑</span>
+                <span class="picker-btn" title="锁/保护/限制" onclick="addItem('🔒')">🔒</span>
+                <span class="picker-btn" title="钱包/财富/价值" onclick="addItem('👛')">👛</span>
+                <span class="picker-btn" title="背包/旅程/承载" onclick="addItem('🎒')">🎒</span>
+                <span class="picker-btn" title="雨伞/保护/遮蔽" onclick="addItem('☂️')">☂️</span>
+                <span class="picker-btn" title="眼镜/视野/清晰" onclick="addItem('👓')">👓</span>
+                <span class="picker-btn" title="帽子/身份/保护" onclick="addItem('🎩')">🎩</span>
+                <span class="picker-btn" title="鞋子/前行/旅程" onclick="addItem('👟')">👟</span>
+                <span class="picker-btn" title="衣服/身份/表达" onclick="addItem('👕')">👕</span>
+            </div>
+
+            <!-- 植物与自然景物类：代表成长、生命力、环境 -->
+            <div class="item-picker" id="tab-plants">
+                <span class="picker-btn" title="大树/主心骨" onclick="addItem('🌳')">🌳</span>
+                <span class="picker-btn" title="常青树/坚韧" onclick="addItem('🌲')">🌲</span>
+                <span class="picker-btn" title="幼苗/新希望" onclick="addItem('🌱')">🌱</span>
+                <span class="picker-btn" title="盛开的花/美好" onclick="addItem('🌸')">🌸</span>
+                <span class="picker-btn" title="向日葵/向阳" onclick="addItem('🌻')">🌻</span>
+                <span class="picker-btn" title="仙人掌/防御" onclick="addItem('🌵')">🌵</span>
+                <span class="picker-btn" title="落叶/逝去" onclick="addItem('🍂')">🍂</span>
+                <span class="picker-btn" title="蘑菇/隐秘角落" onclick="addItem('🍄')">🍄</span>
+                <span class="picker-btn" title="玫瑰/爱情/美丽" onclick="addItem('🌹')">🌹</span>
+                <span class="picker-btn" title="郁金香/优雅/高贵" onclick="addItem('🌷')">🌷</span>
+                <span class="picker-btn" title="菊花/坚韧/长寿" onclick="addItem('🌼')">🌼</span>
+                <span class="picker-btn" title="竹子/坚韧/谦逊" onclick="addItem('🎋')">🎋</span>
+                <span class="picker-btn" title="椰子树/热带/自由" onclick="addItem('🌴')">🌴</span>
+                <span class="picker-btn" title="棕榈树/度假/放松" onclick="addItem('🌴')">🌴</span>
+                <span class="picker-btn" title="高山/目标/困难" onclick="addItem('⛰️')">⛰️</span>
+                <span class="picker-btn" title="水流/情绪流淌" onclick="addItem('🌊')">🌊</span>
+                <span class="picker-btn" title="太阳/意识/能量" onclick="addItem('☀️')">☀️</span>
+                <span class="picker-btn" title="月亮/潜意识/阴柔" onclick="addItem('🌙')">🌙</span>
+                <span class="picker-btn" title="星星/希望/指引" onclick="addItem('✨')">✨</span>
+                <span class="picker-btn" title="乌云雷电/压抑情绪" onclick="addItem('⛈️')">⛈️</span>
+                <span class="picker-btn" title="彩虹/希望/美好" onclick="addItem('🌈')">🌈</span>
+                <span class="picker-btn" title="雪花/纯净/寒冷" onclick="addItem('❄️')">❄️</span>
+                <span class="picker-btn" title="火焰/热情/转化" onclick="addItem('🔥')">🔥</span>
+                <span class="picker-btn" title="岩石/坚固/永恒" onclick="addItem('🪨')">🪨</span>
+                <span class="picker-btn" title="沙子/流动/变化" onclick="addItem('🏖️')">🏖️</span>
+            </div>
+
+            <!-- 食物果实类：代表滋养、享受、收获 -->
+            <div class="item-picker" id="tab-food">
+                <span class="picker-btn" title="苹果/健康/知识" onclick="addItem('🍎')">🍎</span>
+                <span class="picker-btn" title="香蕉/柔软/甜蜜" onclick="addItem('🍌')">🍌</span>
+                <span class="picker-btn" title="橙子/活力/阳光" onclick="addItem('🍊')">🍊</span>
+                <span class="picker-btn" title="葡萄/丰富/庆祝" onclick="addItem('🍇')">🍇</span>
+                <span class="picker-btn" title="草莓/甜蜜/爱情" onclick="addItem('🍓')">🍓</span>
+                <span class="picker-btn" title="西瓜/清凉/夏日" onclick="addItem('🍉')">🍉</span>
+                <span class="picker-btn" title="桃子/温柔/美好" onclick="addItem('🍑')">🍑</span>
+                <span class="picker-btn" title="樱桃/珍贵/美丽" onclick="addItem('🍒')">🍒</span>
+                <span class="picker-btn" title="柠檬/清新/净化" onclick="addItem('🍋')">🍋</span>
+                <span class="picker-btn" title="菠萝/热情/异域" onclick="addItem('🍍')">🍍</span>
+                <span class="picker-btn" title="芒果/甜蜜/热带" onclick="addItem('🥭')">🥭</span>
+                <span class="picker-btn" title="梨子/清甜/简单" onclick="addItem('🍐')">🍐</span>
+                <span class="picker-btn" title="面包/基础/滋养" onclick="addItem('🍞')">🍞</span>
+                <span class="picker-btn" title="蛋糕/庆祝/甜蜜" onclick="addItem('🎂')">🎂</span>
+                <span class="picker-btn" title="饼干/小确幸/简单" onclick="addItem('🍪')">🍪</span>
+                <span class="picker-btn" title="巧克力/甜蜜/奖励" onclick="addItem('🍫')">🍫</span>
+                <span class="picker-btn" title="冰淇淋/快乐/童年" onclick="addItem('🍦')">🍦</span>
+                <span class="picker-btn" title="咖啡/清醒/能量" onclick="addItem('☕')">☕</span>
+                <span class="picker-btn" title="茶/宁静/思考" onclick="addItem('🍵')">🍵</span>
+                <span class="picker-btn" title="牛奶/滋养/纯洁" onclick="addItem('🥛')">🥛</span>
+                <span class="picker-btn" title="鸡蛋/新生/营养" onclick="addItem('🥚')">🥚</span>
+                <span class="picker-btn" title="奶酪/丰富/成熟" onclick="addItem('🧀')">🧀</span>
+                <span class="picker-btn" title="汉堡/满足/现代" onclick="addItem('🍔')">🍔</span>
+                <span class="picker-btn" title="披萨/分享/温暖" onclick="addItem('🍕')">🍕</span>
+                <span class="picker-btn" title="寿司/精致/东方" onclick="addItem('🍣')">🍣</span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 第三步：对话式分析 -->
+    <div class="step" id="step3">
+        <h2 style="color: #2e7d32;">💌 咨询师的轻语</h2>
+        <div class="report-content" id="report"></div>
+        <button class="btn" onclick="location.reload()">给沙盘抚平，重新开始</button>
+    </div>
+</div>
+
+<script>
+    let placedItems = [];
+    const music = document.getElementById('bgMusic');
+
+    // 标签切换逻辑
+    function switchTab(tabId) {
+        // 移除所有按钮的 active 类
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        // 隐藏所有面板
+        document.querySelectorAll('.item-picker').forEach(picker => picker.classList.remove('active'));
+        
+        // 激活当前按钮和面板
+        event.target.classList.add('active');
+        document.getElementById('tab-' + tabId).classList.add('active');
+    }
+
+    function startExperience() {
+        music.volume = 0.5; // 轻柔的冥想钵音量
+        music.play().catch(() => console.log("需用户交互才能播放音频"));
+        showStep(2);
+    }
+
+    function showStep(n) {
+        document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+        document.getElementById('step' + n).classList.add('active');
+    }
+
+    function addItem(emoji) {
+        const box = document.getElementById('sandBox');
+        const item = document.createElement('div');
+        item.className = 'sand-item';
+        item.innerText = emoji;
+        // 随机一个初始位置在中心附近
+        item.style.left = (40 + Math.random() * 10) + '%';
+        item.style.top = (40 + Math.random() * 10) + '%';
+        
+        let isDragging = false;
+        let currentItem = null;
+        
+        // 为每个沙具单独绑定拖拽事件
+        item.onmousedown = (e) => { 
+            e.preventDefault();
+            isDragging = true; 
+            currentItem = item;
+            item.style.zIndex = 100; 
+            item.style.transform = 'scale(1.2) rotate(5deg)';
+        };
+        
+        // 全局鼠标移动事件，处理当前拖拽的沙具
+        document.onmousemove = (e) => {
+            if (isDragging && currentItem) {
+                const rect = box.getBoundingClientRect();
+                let x = e.clientX - rect.left - 25;
+                let y = e.clientY - rect.top - 25;
+                // 边界检测
+                x = Math.max(0, Math.min(x, rect.width - 50));
+                y = Math.max(0, Math.min(y, rect.height - 50));
+                currentItem.style.left = x + 'px';
+                currentItem.style.top = y + 'px';
+            }
+        };
+        
+        document.onmouseup = () => { 
+            if(isDragging && currentItem) {
+                isDragging = false; 
+                currentItem.style.zIndex = 10; 
+                currentItem.style.transform = 'scale(1) rotate(0deg)';
+                currentItem = null;
+            }
+        };
+        // 处理鼠标移出沙盘区域导致拖拽失效的问题
+        document.onmouseleave = () => { 
+            if(isDragging && currentItem) {
+                isDragging = false; 
+                currentItem.style.zIndex = 10; 
+                currentItem.style.transform = 'scale(1) rotate(0deg)';
+                currentItem = null;
+            }
+        };
+        
+        // 添加右键点击删除功能
+        item.oncontextmenu = (e) => {
+            e.preventDefault(); // 阻止默认右键菜单
+            if(confirm('确定要删除这个沙具吗？')) {
+                // 从DOM中移除
+                box.removeChild(item);
+                // 从placedItems数组中移除
+                placedItems = placedItems.filter(i => i.element !== item);
+            }
+        };
+        
+        // 添加滚轮缩放功能
+        item.onwheel = (e) => {
+            e.preventDefault(); // 阻止默认滚轮行为
+            e.stopPropagation(); // 阻止事件冒泡
+            
+            // 获取当前缩放比例
+            const currentTransform = item.style.transform || '';
+            const scaleMatch = currentTransform.match(/scale\(([\d.]+)\)/);
+            let currentScale = scaleMatch ? parseFloat(scaleMatch[1]) : 1;
+            
+            // 根据滚轮方向调整缩放比例
+            if (e.deltaY < 0) {
+                // 向上滚动，放大
+                currentScale = Math.min(currentScale + 0.1, 3); // 最大3倍
+            } else {
+                // 向下滚动，缩小
+                currentScale = Math.max(currentScale - 0.1, 0.5); // 最小0.5倍
+            }
+            
+            // 应用新的缩放比例，保持原有的旋转角度
+            const rotateMatch = currentTransform.match(/rotate\(([\d.-]+)deg\)/);
+            const currentRotate = rotateMatch ? parseFloat(rotateMatch[1]) : 0;
+            item.style.transform = `scale(${currentScale}) rotate(${currentRotate}deg)`;
+        };
+        
+        box.appendChild(item);
+        placedItems.push({ emoji, element: item });
+    }
+
+    function analyzeSandplay() {
+        if(placedItems.length === 0) {
+            alert("沙盘还是空的哦，试着放一两个物件上去吧。");
+            return;
+        }
+
+        const confusion = document.getElementById('confusion').value || '寻找内心的平静';
+        const focusField = document.getElementById('focusField').value;
+        const boxWidth = document.getElementById('sandBox').offsetWidth;
+        const boxHeight = document.getElementById('sandBox').offsetHeight;
+        let leftCount = 0, rightCount = 0, centerCount = 0;
+        let topCount = 0, bottomCount = 0, middleCount = 0;
+        const icons = placedItems.map(i => i.emoji);
+
+        // 计算空间分布
+        placedItems.forEach(item => {
+            const x = parseInt(item.element.style.left) || 0;
+            const y = parseInt(item.element.style.top) || 0;
+            
+            // 水平分布
+            if (x < boxWidth * 0.35) leftCount++;
+            else if (x > boxWidth * 0.65) rightCount++;
+            else centerCount++;
+            
+            // 垂直分布
+            if (y < boxHeight * 0.35) topCount++;
+            else if (y > boxHeight * 0.65) bottomCount++;
+            else middleCount++;
+        });
+
+        const reportArea = document.getElementById('report');
+        let html = '';
+
+        // 1. 开场白与整体印象 (容量评估)
+        html += `<div class="chat-bubble">`;
+        html += `<p>你好。看着你刚刚摆放的这个沙盘，伴着现在的呼吸节奏，我能感受到一种特别的能量。</p>`;
+        if (placedItems.length >= 8) {
+            html += `<p>我注意到沙盘里非常丰富。<span class="highlight-text">你心里是不是装了好多事情？</span> 既有现实的牵绊，也有内心的渴望。辛苦了，背负着这么多东西前行一定不容易。我们试着深呼吸，一件一件来梳理。</p>`;
+        } else if (placedItems.length <= 3) {
+            html += `<p>你的沙盘非常简洁。<span class="highlight-text">这显示你的内心现在可能有些疲惫，或者你需要一种极致的专注和清静。</span> 这是一种很好的自我保护机制，留白也是一种充满力量的表达。</p>`;
+        } else {
+            html += `<p>你放置的物件不多不少，错落有致。这说明你在纷繁的生活中，依然努力保持着内在的节奏与平衡。</p>`;
+        }
+        html += `</div>`;
+
+        // 2. 对话式空间解读 - 更深度的空间分析
+        html += `<div class="chat-bubble">`;
+        
+        // 水平空间分析
+        if (leftCount > rightCount && leftCount > centerCount) {
+            html += `<p>观察你摆放的位置，我发现很多物件都偏向了<b>沙盘的左侧</b>。</p><p>在心理沙盘中，左边往往代表着我们的过去、潜意识以及母性的滋养力量。这似乎在轻声告诉我：<span class="highlight-text">你最近是不是常常回忆起以前的事？或者正在处理与家庭、童年相关的情感体验？</span> 没关系的，在过去多待一会儿，好好拥抱过去的自己，等能量积蓄够了，我们自然有力量向前走。</p>`;
+        } else if (rightCount > leftCount && rightCount > centerCount) {
+            html += `<p>我看到你把许多注意力放在了<b>沙盘的右侧</b>。</p><p>右边指向的是未来、外部世界和父性的力量。这让我觉得，<span class="highlight-text">你心里正憋着一股劲想要向前冲，或者对即将到来的某些挑战、现实的期待感到有些焦虑。</span> 你的目光看向远方，这很有生命力。但请记得温柔地提醒自己：未来是一步步走出来的，不必急于一时。</p>`;
+        } else {
+            html += `<p>你的沙盘重心很稳，大部分能量聚集在了<b>正中间</b>。</p><p>此时此刻的“你”是你最关注的。这是一种非常好的“活在当下”的状态。<span class="highlight-text">你在努力把握目前的重心，试图将内心的需求与外界的现实融合好。</span> 继续保持这份对“此时此地”的觉知吧。</p>`;
+        }
+        
+        // 垂直空间分析
+        if (topCount > bottomCount && topCount > middleCount) {
+            html += `<p>同时，我注意到很多物件都摆放在了沙盘的<b>上方</b>。</p><p>上方通常代表着精神层面、理想和愿景。这说明你最近可能更关注精神追求、个人成长或者对未来的美好憧憬。</p>`;
+        } else if (bottomCount > topCount && bottomCount > middleCount) {
+            html += `<p>我还发现很多物件都摆放在了沙盘的<b>下方</b>。</p><p>下方象征着现实基础、安全感和物质层面。这可能意味着你现在更关注实际问题、生活基础或者寻求更稳定的安全感。</p>`;
+        }
+        html += `</div>`;
+
+        // 3. 对话式核心意象解读 - 更深度的象征分析
+        html += `<div class="chat-bubble"><p>再来看看你选择的这些特定的“小客人”吧：</p><ul>`;
+        let insights = 0;
+        
+        // 建筑/防御类
+        if ((icons.includes('🧱') || icons.includes('🏰') || icons.includes('🌵')) && insights < 4) {
+            html += `<li><b>关于那些防御 (🧱/🏰/🌵)：</b> 我看到了你筑起的墙或堡垒。你是不是觉得目前的环境有些缺乏安全感？它们在保护你不受伤的同时，可能也挡住了想靠近你的善意。当觉得安全的时候，试着在心里给墙留一扇小门好吗？</li>`;
+            insights++;
+        }
+        // 自然/情绪类
+        if ((icons.includes('🌊') || icons.includes('⛈️')) && insights < 4) {
+            html += `<li><b>关于水与风雨 (🌊/⛈️)：</b> 这代表着情绪的流淌和积压。试着问问自己，最近的情绪是像小溪一样平静，还是像波涛一样汹涌？不要去堵住它，允许情绪流淌，就是最好的疗愈。</li>`;
+            insights++;
+        }
+        // 动物/本能类
+        if ((icons.includes('🐅') || icons.includes('🐍') || icons.includes('🕸️')) && insights < 4) {
+            html += `<li><b>关于猛兽或暗影 (🐅/🐍/🕸️)：</b> 看到它们，我感受到了强大的原始力量。这可能是你压抑的愤怒、恐惧，或者是你极度的渴望。不要害怕它们，这是你生命力的一部分，试着在心里驯服并接纳这股能量。</li>`;
+            insights++;
+        }
+        // 动物/陪伴类
+        if ((icons.includes('🐈') || icons.includes('🐕') || icons.includes('👫')) && insights < 4) {
+            html += `<li><b>关于那些陪伴 (🐈/🐕/👫)：</b> 它们出现在这里，说明你内心深处非常渴望温暖的联结、忠诚的陪伴，或是无条件的接纳。请相信，你值得被这样温柔相待。</li>`;
+            insights++;
+        }
+        // 神性/高维类
+        if ((icons.includes('👼') || icons.includes('🧘') || icons.includes('✨')) && insights < 4) {
+            html += `<li><b>关于那份宁静与指引 (👼/🧘/✨)：</b> 这非常美好。这说明不管现实多混乱，你内在依然保留着一个宁静的角落，有着强大的自我疗愈本能。请相信你内心这份高维度的智慧。</li>`;
+            insights++;
+        }
+        // 植物/成长类
+        if ((icons.includes('🌳') || icons.includes('🌱') || icons.includes('🌸')) && insights < 4) {
+            html += `<li><b>关于那些植物 (🌳/🌱/🌸)：</b> 看到绿色的生机，我看到了你渴望成长、渴望扎根的心。植物的生长需要周期，允许自己慢慢来，给自己浇点水，晒晒太阳。</li>`;
+            insights++;
+        }
+        // 连接类
+        if ((icons.includes('🌉') || icons.includes('🚪') || icons.includes('🔑')) && insights < 4) {
+            html += `<li><b>关于桥梁与门扉 (🌉/🚪/🔑)：</b> 它们意味着连接、选择与过渡。你似乎正处在人生的某个转折点，渴望解开某个心结，或者在两种状态之间建立起沟通的桥梁。勇敢地走过去吧。</li>`;
+            insights++;
+        }
+        // 时间/记忆类
+        if ((icons.includes('🕰️')) && insights < 4) {
+            html += `<li><b>关于时间 (🕰️)：</b> 时钟的出现可能暗示着你对时间的焦虑，或者对过去的怀念、对未来的担忧。试着让时间成为你的朋友，而不是敌人。</li>`;
+            insights++;
+        }
+        // 自我类
+        if ((icons.includes('👤') || icons.includes('👶')) && insights < 4) {
+            html += `<li><b>关于自我 (👤/👶)：</b> 你在沙盘中放置了代表自己的形象，这说明你正在关注自我认知、个人成长或者内在的需求。给自己一些时间和空间，倾听内心最真实的声音。</li>`;
+            insights++;
+        }
+
+        if(insights === 0) {
+            html += `<li>你选择的每一个元素，都在默默替你表达着那些无法言说的情绪。它们在沙盘里相遇，就是一种奇妙的缘分。</li>`;
+        }
+        html += `</ul></div>`;
+
+        // 4. 基于焦点领域的深度分析
+        html += `<div class="chat-bubble">`;
+        html += `<p>你最初提到最想关注的是：`;
+        
+        switch(focusField) {
+            case 'ego':
+                html += `<span class="highlight-text">自我认同（我是谁，我的价值在哪）</span>`;
+                html += `<p>从你的沙盘中，我看到了你对自我认知的探索。那些代表你的元素、你选择的位置，都在诉说着你对自我身份的思考。记住，你的价值不取决于外界的评价，而是源于你内心的光芒。</p>`;
+                break;
+            case 'shadow':
+                html += `<span class="highlight-text">隐藏的疲惫与压力（那些我不愿面对的）</span>`;
+                html += `<p>我注意到你可能在沙盘中放置了一些代表挑战或压力的元素。这些“阴影”部分其实是你生命力的一部分，接纳它们，与它们对话，你会发现内在的力量。</p>`;
+                break;
+            case 'persona':
+                html += `<span class="highlight-text">外界眼中的面具（我在社会/关系中扮演的角色）</span>`;
+                html += `<p>你的沙盘布局可能反映了你在不同角色间的平衡。记住，真实的你比任何角色都更重要，允许自己在适当的时候摘下面具，做最真实的自己。</p>`;
+                break;
+            case 'anima':
+                html += `<span class="highlight-text">内在的情感归宿（我渴望的温暖与爱）</span>`;
+                html += `<p>从你的选择中，我感受到了你对情感连接的渴望。无论是亲情、友情还是爱情，这些情感都是你生命中重要的滋养。给自己机会去接受和给予爱。</p>`;
+                break;
+        }
+        html += `</div>`;
+
+        // 5. 总结与个性化建议
+        html += `<div class="chat-bubble">`;
+        html += `<p>一开始，你跟我分享了你的期待/困惑：“<span class="soft-text">${confusion}</span>”。</p>`;
+        html += `<p>结合你的沙盘，我想给你一些个性化的建议：</p>`;
+        
+        // 根据沙具和布局提供具体建议
+        if (icons.includes('🧘') || icons.includes('✨')) {
+            html += `<p>1. <b>每天留10分钟给自己</b>：找一个安静的地方，闭上眼睛，关注呼吸，与内在的自己对话。</p>`;
+        }
+        if (icons.includes('🌉') || icons.includes('🚪')) {
+            html += `<p>2. <b>勇敢面对转变</b>：如果你正处在人生的转折点，试着将恐惧转化为勇气，每一步都走得坚定。</p>`;
+        }
+        if (icons.includes('🐈') || icons.includes('🐕') || icons.includes('👫')) {
+            html += `<p>3. <b>珍惜身边的陪伴</b>：主动与关心你的人分享你的感受，连接是最好的疗愈。</p>`;
+        }
+        if (icons.includes('🌱') || icons.includes('🌸')) {
+            html += `<p>4. <b>给自己成长的时间</b>：就像植物需要时间发芽生长，你的内心也需要时间去愈合和成长。</p>`;
+        }
+        
+        html += `<p>最后，请记住：<span class="highlight-text">你的内心有一个坚韧的花园，无论外界刮什么风，这里的土壤永远接纳你。</span> 你值得被温柔以待，值得拥有所有美好的事物。</p>`;
+        html += `</div>`;
+
+        // 6. 行动建议卡片
+        html += `<div class="chat-bubble">`;
+        html += `<h3 style="color: #2e7d32;">🌱 本周行动建议</h3>`;
+        html += `<ul>`;
+        html += `<li>每天记录一件让你感到温暖或有成就感的小事</li>`;
+        html += `<li>尝试一种新的自我关怀方式（比如泡个热水澡、听喜欢的音乐）</li>`;
+        html += `<li>与一位信任的朋友或家人分享你的感受</li>`;
+        html += `<li>在感到压力时，做三次深呼吸，对自己说：“我可以，我值得”</li>`;
+        html += `</ul>`;
+        html += `</div>`;
+
+        reportArea.innerHTML = html;
+        showStep(3);
+    }
+</script>
+
+</body>
+</html>
